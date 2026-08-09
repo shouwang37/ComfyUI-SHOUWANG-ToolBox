@@ -9,16 +9,23 @@ from typing import Dict, List, Tuple
 
 import numpy as np
 from PIL import Image
-import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 import torch
 
 # ============ 模型目录与预处理常量 ============
 
-# 模型根目录：../models/tagger
-# 相对插件目录的上级（custom_nodes）再上一级（ComfyUI 根目录）下的 models/tagger
+# 插件根目录：当前文件在 <插件>/src/string/ 下，上三级即插件根目录
 PLUGIN_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-TAGGER_DIR = os.path.normpath(os.path.join(PLUGIN_ROOT, "..", "..", "models", "tagger"))
+
+
+def _tagger_dir() -> str:
+    """模型目录：优先 ComfyUI 标准模型根目录（folder_paths.models_dir）下的 tagger，
+    兼容任意安装位置；兜底相对插件路径（custom_nodes 上一级 models/tagger）"""
+    try:
+        from folder_paths import models_dir
+        base = models_dir
+    except Exception:
+        base = os.path.normpath(os.path.join(PLUGIN_ROOT, "..", "..", "models"))
+    return os.path.normpath(os.path.join(base, "tagger"))
 
 # pixai 系列固定输入尺寸（Resize((448,448)) 直接拉伸）
 INPUT_SIZE = 448
@@ -58,11 +65,12 @@ def process_tag(tag: str, replace_underscore: bool, escape_parentheses: bool) ->
 
 def _model_folders() -> List[str]:
     """列出 models/tagger 目录下包含模型文件的文件夹名"""
-    if not os.path.isdir(TAGGER_DIR):
+    tagger_dir = _tagger_dir()
+    if not os.path.isdir(tagger_dir):
         return []
     result = []
-    for f in sorted(os.listdir(TAGGER_DIR)):
-        folder = os.path.join(TAGGER_DIR, f)
+    for f in sorted(os.listdir(tagger_dir)):
+        folder = os.path.join(tagger_dir, f)
         if not os.path.isdir(folder):
             continue
         has_model = any(
@@ -164,7 +172,10 @@ def _setup_cjk_font():
     if _CJK_FONT_SET:
         return
     _CJK_FONT_SET = True
+    import matplotlib
     import matplotlib.font_manager as fm
+    matplotlib.use("Agg")  # 无显示环境（后端服务）安全绘图
+    import matplotlib.pyplot as plt
     windir = os.environ.get("WINDIR", r"C:\Windows")
     for name in ("msyh.ttc", "simhei.ttf"):
         path = os.path.join(windir, "Fonts", name)
@@ -176,6 +187,8 @@ def _setup_cjk_font():
 
 
 def visualize_predictions(predictions: Dict, threshold: float, switches: Dict, width_px=1000, height_px=1200):
+    import matplotlib.pyplot as plt
+    from matplotlib.patches import Patch
     _setup_cjk_font()
     # 过滤不想要的元数据标签
     filtered_meta = []
@@ -727,7 +740,7 @@ class ShouWangVizTaggerNode:
     def _get_tagger(self, 模型名称):
         """按模型名加载/获取反推器（缓存）"""
         if 模型名称 not in self.interrogators:
-            model_dir = os.path.join(TAGGER_DIR, 模型名称)
+            model_dir = os.path.join(_tagger_dir(), 模型名称)
             if not os.path.isdir(model_dir):
                 raise RuntimeError(
                     f"未找到模型文件夹「{模型名称}」，请确认其位于 models/tagger 目录"
@@ -831,6 +844,7 @@ class ShouWangVizTaggerNode:
 
     def _batch_viz(self, summary, width_px, height_px):
         """批量结果汇总图：每张图一行（文件名 + 状态 + top3 标签）"""
+        import matplotlib.pyplot as plt
         _setup_cjk_font()
         dpi = 100
         fig = plt.figure(figsize=(width_px / dpi, height_px / dpi), dpi=dpi)
