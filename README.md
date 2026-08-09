@@ -29,21 +29,21 @@
 
 模型统一放在 **ComfyUI 全局 models 目录下的 tagger 文件夹**（唯一位置，即 `../models/tagger`）：
 
-ComfyUI/models/tagger/ ← 文件夹名即下拉框中的模型名称
-├── wd-eva02-large-tagger-v3/
-│ ├── model.onnx ← WD14 模型权重（必需）
-│ └── selected_tags.csv ← WD14 风格标签文件（必需）
-├── pixai-tagger-v0.9/
-│ ├── model_v0.9.pth ← pixai 官方 PyTorch 权重（必需，约 1.2GB）
-│ ├── tags_v0.9_13k.json ← pixai 标签文件（必需，13461 个标签）
-│ └── char_ip_map.json ← 可选，角色 IP 关联表
-├── JTP_PILOT2/
-│ ├── JTP_PILOT2-e3-vit_so400m_patch14_siglip_384.safetensors ← JTP 权重（必需，约 1.7GB）
-│ └── tags.json ← e621 标签文件（必需，9083 个标签）
-├── cl_tagger_1_02/
-│ ├── model.onnx （必需，约 1.3GB）
-│ └── tag_mapping.json
+ComfyUI/models/tagger/wd-eva02-large-tagger-v3/
+├── model.onnx
+└── selected_tags.csv
 
+ComfyUI/models/tagger/cl_tagger_1_02/
+├── model.onnx
+└── tag_mapping.json
+
+ComfyUI/models/tagger/pixai-tagger-v0.9-onnx/
+├── model.onnx
+└── tag_mapping.json
+
+ComfyUI/models/tagger/JTP_PILOT2/
+├── JTP_PILOT2-e3-vit_so400m_patch14_siglip_384.safetensors
+└── tags.json
 ### 2.提示词 反推批量
 
 ![Logo](./assets/img/%E6%8F%90%E7%A4%BA%E8%AF%8D%20%E5%8F%8D%E6%8E%A8%E6%89%B9%E9%87%8F.png)
