@@ -1,6 +1,6 @@
 # ComfyUI-SHOUWANG-ToolBox
 
-![Logo](../ComfyUI-SHOUWANG-ToolBox/assets/img/卞玥_蓝玫映月_2.jpg)
+![Logo](../assets/img/卞玥_蓝玫映月_2.jpg)
 
 ## 简介
 
