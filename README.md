@@ -80,7 +80,7 @@ ComfyUI/models/tagger/                  ← 文件夹名即下拉框中的模型
 
 ### 4.图像 拼接对比
 
-![Logo](..\ComfyUI-SHOUWANG-ToolBox\assets\img\图像 拼接对比.png)
+![Logo](..\assets\img\图像 拼接对比.png)
 
 #### 可以添加任意的组别设置标题将图片拼接在一起进行拼接对比
 
