@@ -1,3 +1,49 @@
+# ComfyUI-SHOUWANG-ToolBox
+
+![Logo](./assets/img/卞玥_蓝玫映月_2.jpg)
+
+## 简介
+
+#### ComfyUI-SHOUWANG-ToolBox 是一个为 ComfyUI 设计的自定义节点集合，提供了一系列实用工具为使用者更好的搭建半自动化、构建图像处理工作流，感谢再见我们下次再见。
+
+## 节点介绍
+
+## 提示词类
+
+### 1.提示词反推
+
+![采样器 UP放大](./assets/img/%E6%8F%90%E7%A4%BA%E8%AF%8D%20%E5%8F%8D%E6%8E%A8.png)
+
+#### 支持的模型：
+
+以下模型已测试支持（放入 `models/tagger` 目录，按文件夹名选择）：
+
+| 模型名称                           | 文件夹名（放置名）         | 模型文件        | 标签文件            | 下载地址                                                     |
+| ---------------------------------- | -------------------------- | --------------- | ------------------- | ------------------------------------------------------------ |
+| WD EVA02-Large Tagger v3           | `wd-eva02-large-tagger-v3` | `model.onnx`    | `selected_tags.csv` | [SmilingWolf/wd-eva02-large-tagger-v3](https://huggingface.co/SmilingWolf/wd-eva02-large-tagger-v3) |
+| cl_tagger_1_02                     | `cl_tagger_1_02`           | `model.onnx`    | `tag_mapping.json`  | [cella110n/cl_tagger](https://huggingface.co/cella110n/cl_tagger/blob/main/cl_tagger_1_02) |
+| PixAI Tagger v0.9（ONNX 兼容）     | `pixai-tagger-v0.9-onnx`   | `model.onnx`    | `tag_mapping.json`  | [deepghs/pixai-tagger-v0.9-onnx](https://huggingface.co/deepghs/pixai-tagger-v0.9-onnx) |
+| JTP PILOT2（FD-Tagger，e621 风格） | `JTP_PILOT2`               | `*.safetensors` | `tags.json`         | [RedRocket/JointTaggerProject](https://huggingface.co/RedRocket/JointTaggerProject) |
+
+#### 模型放置方法：
+
+模型统一放在 **ComfyUI 全局 models 目录下的 tagger 文件夹**（唯一位置，即 `../models/tagger`）：
+
+ComfyUI/models/tagger/ ← 文件夹名即下拉框中的模型名称
+├── wd-eva02-large-tagger-v3/
+│ ├── model.onnx ← WD14 模型权重（必需）
+│ └── selected_tags.csv ← WD14 风格标签文件（必需）
+├── pixai-tagger-v0.9/
+│ ├── model_v0.9.pth ← pixai 官方 PyTorch 权重（必需，约 1.2GB）
+│ ├── tags_v0.9_13k.json ← pixai 标签文件（必需，13461 个标签）
+│ └── char_ip_map.json ← 可选，角色 IP 关联表
+├── JTP_PILOT2/
+│ ├── JTP_PILOT2-e3-vit_so400m_patch14_siglip_384.safetensors ← JTP 权重（必需，约 1.7GB）
+│ └── tags.json ← e621 标签文件（必需，9083 个标签）
+├── cl_tagger_1_02/
+│ ├── model.onnx （必需，约 1.3GB）
+│ └── tag_mapping.json
+
 ### 2.提示词 反推批量
 
 ![Logo](./assets/img/%E6%8F%90%E7%A4%BA%E8%AF%8D%20%E5%8F%8D%E6%8E%A8%E6%89%B9%E9%87%8F.png)
