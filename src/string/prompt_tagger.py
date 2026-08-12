@@ -432,6 +432,29 @@ def _preprocess_jtp(image: Image.Image) -> torch.Tensor:
     return torch.from_numpy(arr.transpose(2, 0, 1).copy()).unsqueeze(0)
 
 
+# CLIP 系模型（cl_tagger 等）归一化参数（OpenAI CLIP 参考值）
+CLIP_MEAN = np.array([0.48145466, 0.4578275, 0.40821073], dtype=np.float32)
+CLIP_STD = np.array([0.26862954, 0.26130258, 0.27577711], dtype=np.float32)
+
+
+def _preprocess_clip(image: Image.Image, size: int = 448) -> np.ndarray:
+    """CLIP 系反推模型（cl_tagger 等）：等比缩放短边 + 中心裁剪 + CLIP mean/std 归一化。
+
+    对齐 OpenAI CLIP 参考预处理（Resize 短边 + CenterCrop + normalize），
+    布局 NCHW [1, 3, size, size]；归一化后值域约 [-2.5, 2.5]。
+    """
+    w, h = image.size
+    scale = float(size) / min(w, h)  # Fit：短边对齐 size
+    new_size = (max(1, round(w * scale)), max(1, round(h * scale)))
+    image = image.resize(new_size, Image.BICUBIC)
+    left = (new_size[0] - size) // 2
+    top = (new_size[1] - size) // 2
+    image = image.crop((left, top, left + size, top + size))
+    arr = np.array(image).astype(np.float32) / 255.0
+    arr = (arr - CLIP_MEAN) / CLIP_STD
+    return np.expand_dims(arr.transpose(2, 0, 1), 0)
+
+
 # --- 反推器 ---
 
 class TaggingHead(torch.nn.Module):
@@ -454,7 +477,7 @@ class OnnxTagger:
         self.model_path = None
         self.tags = None
         self.model = None
-        self.wd14_style = False  # True=WD14 预处理（等比白底 BGR）；False=pixai 预处理（[-1,1]）
+        self.wd14_style = False  # 历史字段：True=WD14 预处理；现由 self.preprocess 统一管理
         self.input_height = INPUT_SIZE
         self.nhwc = False
 
@@ -472,7 +495,6 @@ class OnnxTagger:
 
         # 标签文件（其格式决定预处理方式）
         self.tags, tag_format = _resolve_label_data(self.model_dir, self.name)
-        self.wd14_style = (tag_format == "selected_tags.csv")
 
         # 设备：优先 CUDA，失败自动回退 CPU
         providers = ['CUDAExecutionProvider', 'CPUExecutionProvider']
@@ -484,25 +506,47 @@ class OnnxTagger:
         # 读取输入规格（WD14 onnx 为 NHWC float32，高度 448）
         inp = self.model.get_inputs()[0]
         shape = list(inp.shape)
-        self.input_height = int(shape[1]) if isinstance(shape[1], int) else INPUT_SIZE
         self.nhwc = (len(shape) == 4 and shape[-1] == 3)
+        if self.nhwc:
+            self.input_height = int(shape[1]) if isinstance(shape[1], int) else INPUT_SIZE
+        else:
+            # NCHW：高度取 shape[2]（如 pixai [1,3,448,448]、cl_tagger [1,3,H,W]）
+            self.input_height = int(shape[2]) if isinstance(shape[2], int) else INPUT_SIZE
+
+        # 预处理方式由「标签文件格式 + 输入尺寸」共同决定：
+        # - selected_tags.csv（WD14）→ WD14 等比白底 0-255 BGR
+        # - 动态尺寸输入（cl_tagger 等 CLIP 系）→ 等比短边 + 中心裁剪 + CLIP mean/std
+        # - 固定尺寸输入（pixai/deepghs onnx）→ 拉伸 + [-1,1]
+        if tag_format == "selected_tags.csv":
+            self.preprocess = "wd14"
+        elif any(not isinstance(d, int) for d in shape[2:]):
+            self.preprocess = "clip"
+        else:
+            self.preprocess = "pixai"
 
     def interrogate(self, image: Image, gen_threshold, char_threshold):
         if self.model is None:
             self.load()
         image = pil_ensure_rgb(image)
 
-        if self.wd14_style:
+        if self.preprocess == "wd14":
             arr = _preprocess_wd14(image, self.input_height)  # NHWC
             if not self.nhwc:
                 arr = arr.transpose(0, 3, 1, 2)  # 转 NCHW
+        elif self.preprocess == "clip":
+            arr = _preprocess_clip(image, self.input_height)  # NCHW
+            if self.nhwc:
+                arr = arr.transpose(0, 2, 3, 1)  # 转 NHWC
         else:
             arr = _preprocess_pixai(image).numpy()  # NCHW
             if self.nhwc:
                 arr = arr.transpose(0, 2, 3, 1)  # 转 NHWC
 
         outputs = self.model.run([self.model.get_outputs()[0].name], {self.model.get_inputs()[0].name: arr})[0]
-        probs = outputs[0]  # 模型输出已含 sigmoid，直接作为概率
+        probs = outputs[0]
+        # 部分模型（如 cl_tagger_1_02）输出未激活的 logits：超出概率范围 [0,1] 时应用 sigmoid
+        if float(probs.max()) > 1.0:
+            probs = 1.0 / (1.0 + np.exp(-probs))
         return get_tags(probs, self.tags, gen_threshold, char_threshold)
 
 
