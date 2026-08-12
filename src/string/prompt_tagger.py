@@ -432,27 +432,23 @@ def _preprocess_jtp(image: Image.Image) -> torch.Tensor:
     return torch.from_numpy(arr.transpose(2, 0, 1).copy()).unsqueeze(0)
 
 
-# CLIP 系模型（cl_tagger 等）归一化参数（OpenAI CLIP 参考值）
-CLIP_MEAN = np.array([0.48145466, 0.4578275, 0.40821073], dtype=np.float32)
-CLIP_STD = np.array([0.26862954, 0.26130258, 0.27577711], dtype=np.float32)
+def _preprocess_cl(image: Image.Image, size: int = 448) -> np.ndarray:
+    """cl_tagger 官方预处理（对齐官方源码 preprocess_image）：
 
-
-def _preprocess_clip(image: Image.Image, size: int = 448) -> np.ndarray:
-    """CLIP 系反推模型（cl_tagger 等）：等比缩放短边 + 中心裁剪 + CLIP mean/std 归一化。
-
-    对齐 OpenAI CLIP 参考预处理（Resize 短边 + CenterCrop + normalize），
-    布局 NCHW [1, 3, size, size]；归一化后值域约 [-2.5, 2.5]。
+    白底方形填充（等比）→ 拉伸到 size×size（BICUBIC）→ /255 → CHW → BGR → mean/std=0.5/0.5。
+    布局 NCHW [1, 3, size, size]。模型微调自 wd-eva02（BGR 输入习惯），必须 BGR + [-1,1]。
     """
     w, h = image.size
-    scale = float(size) / min(w, h)  # Fit：短边对齐 size
-    new_size = (max(1, round(w * scale)), max(1, round(h * scale)))
-    image = image.resize(new_size, Image.BICUBIC)
-    left = (new_size[0] - size) // 2
-    top = (new_size[1] - size) // 2
-    image = image.crop((left, top, left + size, top + size))
+    if w != h:
+        new_size = max(w, h)
+        square = Image.new("RGB", (new_size, new_size), (255, 255, 255))
+        square.paste(image, ((new_size - w) // 2, (new_size - h) // 2))
+        image = square
+    image = image.resize((size, size), Image.BICUBIC)
     arr = np.array(image).astype(np.float32) / 255.0
-    arr = (arr - CLIP_MEAN) / CLIP_STD
-    return np.expand_dims(arr.transpose(2, 0, 1), 0)
+    arr = arr.transpose(2, 0, 1)  # HWC -> CHW
+    arr = arr[::-1, :, :]  # RGB -> BGR
+    return np.expand_dims((arr - 0.5) / 0.5, 0)
 
 
 # --- 反推器 ---
@@ -515,12 +511,12 @@ class OnnxTagger:
 
         # 预处理方式由「标签文件格式 + 输入尺寸」共同决定：
         # - selected_tags.csv（WD14）→ WD14 等比白底 0-255 BGR
-        # - 动态尺寸输入（cl_tagger 等 CLIP 系）→ 等比短边 + 中心裁剪 + CLIP mean/std
+        # - 动态尺寸输入（cl_tagger 系）→ 官方预处理：白底方形填充 + 拉伸 + BGR + [-1,1]
         # - 固定尺寸输入（pixai/deepghs onnx）→ 拉伸 + [-1,1]
         if tag_format == "selected_tags.csv":
             self.preprocess = "wd14"
         elif any(not isinstance(d, int) for d in shape[2:]):
-            self.preprocess = "clip"
+            self.preprocess = "cl"
         else:
             self.preprocess = "pixai"
 
@@ -533,8 +529,8 @@ class OnnxTagger:
             arr = _preprocess_wd14(image, self.input_height)  # NHWC
             if not self.nhwc:
                 arr = arr.transpose(0, 3, 1, 2)  # 转 NCHW
-        elif self.preprocess == "clip":
-            arr = _preprocess_clip(image, self.input_height)  # NCHW
+        elif self.preprocess == "cl":
+            arr = _preprocess_cl(image, self.input_height)  # NCHW
             if self.nhwc:
                 arr = arr.transpose(0, 2, 3, 1)  # 转 NHWC
         else:
@@ -545,8 +541,9 @@ class OnnxTagger:
         outputs = self.model.run([self.model.get_outputs()[0].name], {self.model.get_inputs()[0].name: arr})[0]
         probs = outputs[0]
         # 部分模型（如 cl_tagger_1_02）输出未激活的 logits：超出概率范围 [0,1] 时应用 sigmoid
+        # （对齐官方 stable_sigmoid，clip 防溢出）
         if float(probs.max()) > 1.0:
-            probs = 1.0 / (1.0 + np.exp(-probs))
+            probs = 1.0 / (1.0 + np.exp(-np.clip(probs, -30, 30)))
         return get_tags(probs, self.tags, gen_threshold, char_threshold)
 
 
@@ -804,6 +801,8 @@ class ShouWangVizTaggerNode:
             "quality": False,
             "model": False,
         }
+
+
 
     def _assemble_tags(self, preds, switches, 替换下划线, 转义括号):
         """按开关与格式化选项组装标签列表（不含种子打乱）"""
