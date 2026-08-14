@@ -598,11 +598,21 @@ app.registerExtension({
                     colorWidget.callback = () => picker.applyColor(colorWidget.value);
                 }
 
-                // 初始尺寸：340 宽，高度按方形色域计算
-                const initWidth = 340;
-                this.setSize([initWidth, PAD + (initWidth - 16) + GAP + HUE_H + GAP + INFO_H + GAP + BTN_H + PAD]);
+                // 初始尺寸：340 宽，高度按方形色域计算；已从序列化恢复的节点跳过（保留保存尺寸）
+                if (!this.__configured) {
+                    const initWidth = 340;
+                    this.setSize([initWidth, PAD + (initWidth - 16) + GAP + HUE_H + GAP + INFO_H + GAP + BTN_H + PAD]);
+                }
                 this.setDirtyCanvas(true, true);
             }, 0);
+        };
+
+        // configure 恢复（加载工作流 / ctrl+z 撤回）：标记已从序列化恢复尺寸，
+        // 此后不再强制默认尺寸，与普通节点行为一致
+        const onConfigure = nodeType.prototype.onConfigure;
+        nodeType.prototype.onConfigure = function (info) {
+            onConfigure?.apply(this, arguments);
+            if (info?.size) this.__configured = true;
         };
 
         // ── 执行完成：「随机颜色」模式下后端回传实际颜色 → 同步取色器显示 ──

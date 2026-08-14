@@ -82,11 +82,20 @@ app.registerExtension({
                 }
 
                 applyParamsVisibility(this);
-                // 初始宽度：新建节点默认偏窄，放宽到 DEFAULT_WIDTH；已保存宽度的节点不强制
-                if ((this.size?.[0] ?? 0) < DEFAULT_WIDTH - 40) {
+                // 初始宽度：新建节点默认偏窄，放宽到 DEFAULT_WIDTH；
+                // 已保存宽度或已从序列化恢复（加载工作流/ctrl+z 撤回）的节点不强制
+                if (!this.__configured && (this.size?.[0] ?? 0) < DEFAULT_WIDTH - 40) {
                     this.setSize([DEFAULT_WIDTH, this.computeSize()[1]]);
                 }
             }, 0);
+        };
+
+        // configure 恢复（加载工作流 / ctrl+z 撤回）：标记已从序列化恢复尺寸，
+        // 此后不再强制初始宽度，保持恢复的保存尺寸，避免撤回后布局跳变
+        const onConfigure = nodeType.prototype.onConfigure;
+        nodeType.prototype.onConfigure = function (info) {
+            onConfigure?.apply(this, arguments);
+            if (info?.size) this.__configured = true;
         };
     },
 

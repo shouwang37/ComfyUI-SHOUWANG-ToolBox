@@ -191,11 +191,21 @@ app.registerExtension({
         if (nodeData.name !== NODE_TYPE) return;
 
         // 新建节点固定默认尺寸：覆盖 computeSize 钳制自动尺寸计算，
-        // 任何内部 setSize(computeSize()) 都得到 360x220，杜绝新建后被自动计算覆盖
+        // 任何内部 setSize(computeSize()) 都得到 360x220，杜绝新建后被自动计算覆盖。
+        // 注意：仅当节点既未被用户手动缩放、也未被 configure（加载工作流/ctrl+z 撤回）恢复时钳制；
+        // 否则尊重实际尺寸，避免撤回后跳回默认宽高导致布局混乱
         const baseComputeSize = nodeType.prototype.computeSize;
         nodeType.prototype.computeSize = function () {
-            if (!this.__userResized) return [...DEFAULT_SIZE];
+            if (!this.__userResized && !this.__configured) return [...DEFAULT_SIZE];
             return baseComputeSize.apply(this, arguments);
+        };
+
+        // configure 恢复（加载工作流 / ctrl+z 撤回）：标记已从序列化恢复尺寸，
+        // 此后不再强制默认尺寸，与普通节点行为一致
+        const onConfigure = nodeType.prototype.onConfigure;
+        nodeType.prototype.onConfigure = function (info) {
+            onConfigure?.apply(this, arguments);
+            if (info?.size) this.__configured = true;
         };
 
         // ── 节点创建：添加「粘贴」按钮 ──
@@ -209,6 +219,11 @@ app.registerExtension({
             setTimeout(() => {
                 // 已添加过则跳过（避免工作流重复加载时重复创建）
                 if (this.widgets?.some((w) => w.name === "复制粘贴")) return;
+
+                // 节点已从序列化恢复（加载工作流/ctrl+z 撤回）：不再强制默认尺寸，
+                // 保持 configure 恢复的保存尺寸，避免覆盖导致布局跳变
+                const restored = this.__configured;
+                if (!restored) this.setSize([...DEFAULT_SIZE]);
 
                 const el = document.createElement("div");
                 el.style.cssText = `display:flex;justify-content:center;gap:${BTN_GAP}px;padding:${BTN_PAD}px;`;
@@ -243,8 +258,8 @@ app.registerExtension({
                     getHeight: () => el.offsetHeight || BTN_ROW_HEIGHT,
                     serialize: false, // 按钮组不参与序列化（图片选择经「image」widget 传递）
                 });
-                // 按钮组加入后再设一次默认尺寸（widget 集合变化后）
-                this.setSize([...DEFAULT_SIZE]);
+                // 按钮组加入后再设一次默认尺寸（widget 集合变化后）；已恢复的节点跳过
+                if (!restored) this.setSize([...DEFAULT_SIZE]);
                 syncButtonWidth(this, copyBtn, pasteBtn);
                 this.setDirtyCanvas(true, true);
             }, 0);
@@ -254,7 +269,12 @@ app.registerExtension({
         const onResize = nodeType.prototype.onResize;
         nodeType.prototype.onResize = function (size) {
             onResize?.apply(this, arguments);
-            this.__userResized = true; // 用户已手动调整尺寸：解锁固定默认尺寸，恢复系统计算
+            // 仅当尺寸实际变化时才解锁固定默认尺寸（用户拖动）；
+            // 内部 setSize 传入相同尺寸或 configure 恢复时不误解锁
+            const changed = !!this.__lastSize && !!size &&
+                (size[0] !== this.__lastSize[0] || size[1] !== this.__lastSize[1]);
+            this.__lastSize = size ? [size[0], size[1]] : null;
+            if (changed) this.__userResized = true;
             const btns = this.__copyPasteBtns;
             if (btns) syncButtonWidth(this, btns.copyBtn, btns.pasteBtn);
             this.graph?.setDirtyCanvas(true, true);

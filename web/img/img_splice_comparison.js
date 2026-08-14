@@ -89,12 +89,21 @@ app.registerExtension({
                     }
                 }
                 this._swRefreshFontFiles();
-                // 初始宽度：新建节点默认偏窄（约 200px），放宽到 DEFAULT_WIDTH；已保存宽度的节点不强制
-                if ((this.size?.[0] ?? 0) < DEFAULT_WIDTH - 40) {
+                // 初始宽度：新建节点默认偏窄（约 200px），放宽到 DEFAULT_WIDTH；
+                // 已保存宽度或已从序列化恢复（加载工作流/ctrl+z 撤回）的节点不强制
+                if (!this.__configured && (this.size?.[0] ?? 0) < DEFAULT_WIDTH - 40) {
                     this.setSize([DEFAULT_WIDTH, this.computeSize()[1]]);
                 }
                 syncGroups(this);
             }, 0);
+        };
+
+        // configure 恢复（加载工作流 / ctrl+z 撤回）：标记已从序列化恢复尺寸，
+        // 此后不再强制初始宽度，保持恢复的保存尺寸，避免撤回后布局跳变
+        const onConfigure = nodeType.prototype.onConfigure;
+        nodeType.prototype.onConfigure = function (info) {
+            onConfigure?.apply(this, arguments);
+            if (info?.size) this.__configured = true;
         };
 
         // 刷新「标题字体」下拉列表（保留当前选择，不存在则切到第一个）

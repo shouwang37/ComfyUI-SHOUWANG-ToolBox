@@ -32,8 +32,9 @@ const syncInputCount = (node) => {
         }
     }
 
-    // 重算节点尺寸并刷新画布
-    node.setSize?.(node.computeSize());
+    // 高度随内容更新，宽度保留当前值（用户拖拽的宽度不被重置，撤回后不跳变）
+    const size = node.computeSize();
+    node.setSize?.([node.size?.[0] ?? size[0], size[1]]);
     node.graph?.setDirtyCanvas(true, true);
 };
 

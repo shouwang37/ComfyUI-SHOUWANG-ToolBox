@@ -98,9 +98,10 @@ const syncInputCount = (node) => {
         }
     }
 
-    // 恢复类型锁定并刷新
+    // 恢复类型锁定并刷新；高度随内容更新，宽度保留当前值（用户拖拽的宽度不被重置）
     refreshLock(node);
-    node.setSize?.(node.computeSize());
+    const size = node.computeSize();
+    node.setSize?.([node.size?.[0] ?? size[0], size[1]]);
     node.graph?.setDirtyCanvas(true, true);
 };
 
@@ -114,7 +115,8 @@ const syncModeWidget = (node) => {
     if (!seqWidget) return;
 
     seqWidget.type = modeWidget?.value === "选择" ? "number" : "hidden";
-    node.setSize?.(node.computeSize());
+    const size = node.computeSize();
+    node.setSize?.([node.size?.[0] ?? size[0], size[1]]);
     node.graph?.setDirtyCanvas(true, true);
 };
 
@@ -171,8 +173,9 @@ app.registerExtension({
             // 类型锁定：以递归追溯到的真实类型统一所有端口
             refreshLock(this);
 
-            // 重算节点尺寸并刷新画布
-            this.setSize?.(this.computeSize());
+            // 高度随内容更新，宽度保留当前值（用户拖拽的宽度不被重置）
+            const size = this.computeSize();
+            this.setSize?.([this.size?.[0] ?? size[0], size[1]]);
             this.graph?.setDirtyCanvas(true, true);
             return result;
         };
