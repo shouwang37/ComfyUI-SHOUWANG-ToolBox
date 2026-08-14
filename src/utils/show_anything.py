@@ -84,12 +84,8 @@ class ShowAnything:
         images = []
         if 输入 is not None:
             if isinstance(输入, torch.Tensor) and 输入.ndim >= 3:
-                # 图像张量：保存为临时图片供节点预览，文本区显示尺寸描述
+                # 图像张量：保存为临时图片供节点预览（仅图片预览，不生成描述文字）
                 images = self._save_temp_images(输入)
-                if images:
-                    values.append(f"图像预览：{len(images)} 张，{images[0]['width']}x{images[0]['height']}")
-                else:
-                    values.append(str(输入))
             elif isinstance(输入, str):
                 values.append(输入)
             elif isinstance(输入, (int, float, bool)):
@@ -112,7 +108,14 @@ class ShowAnything:
             if node:
                 node["widgets_values"] = [values]
 
-        result = values[0] if len(values) == 1 else values
+        # 输出：无文本内容时（纯图像输入）透传原图像，避免索引越界
+        if len(values) == 1:
+            result = values[0]
+        elif values:
+            result = values
+        else:
+            result = 输入
+
         ui = {"text": values}
         if images:
             ui["images"] = images

@@ -62,6 +62,7 @@ try:
     import src.utils.bookmark
     import src.sampler.Partial_repainting
     import src.sampler.usdu_upscale
+    import src.image.img_paste_load
     import src.image.img_splice
     import src.image.img_crop
     import src.image.img_side_scaling
@@ -77,7 +78,7 @@ try:
     NODE_DISPLAY_NAME_MAPPINGS = {}
 
     # 从各个模块收集节点映射
-    modules = [src.string.prompt_tagger, src.string.prompt_tagger_Batch, src.string.prompt_input, src.string.prompt_replacer, src.string.prompt_filter, src.string.prompt_merger, src.string.prompt_formatter, src.utils.anything_select, src.utils.save_to_folder, src.utils.load_from_folder, src.utils.show_anything, src.utils.color_picker, src.utils.outpaint_canvas, src.utils.bookmark, src.sampler.Partial_repainting, src.sampler.usdu_upscale, src.image.img_splice, src.image.img_crop, src.image.img_side_scaling, src.image.img_slide_compare, src.image.img_splice_comparison, src.image.img_tile_size, src.image.img_tile_batch, src.image.img_tile_assemble, src.audio.play_audio]
+    modules = [src.string.prompt_tagger, src.string.prompt_tagger_Batch, src.string.prompt_input, src.string.prompt_replacer, src.string.prompt_filter, src.string.prompt_merger, src.string.prompt_formatter, src.utils.anything_select, src.utils.save_to_folder, src.utils.load_from_folder, src.utils.show_anything, src.utils.color_picker, src.utils.outpaint_canvas, src.utils.bookmark, src.sampler.Partial_repainting, src.sampler.usdu_upscale, src.image.img_paste_load, src.image.img_splice, src.image.img_crop, src.image.img_side_scaling, src.image.img_slide_compare, src.image.img_splice_comparison, src.image.img_tile_size, src.image.img_tile_batch, src.image.img_tile_assemble, src.audio.play_audio]
     for module in modules:
         if hasattr(module, 'NODE_CLASS_MAPPINGS'):
             NODE_CLASS_MAPPINGS.update(module.NODE_CLASS_MAPPINGS)
