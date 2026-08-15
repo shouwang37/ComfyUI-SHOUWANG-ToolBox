@@ -18,5 +18,13 @@ Thumbs.db
 # ── 日志 ──
 *.log
 
+# ── 音频资源:仅保留 叮.mp3,忽略其余文件 ──
+assets/audio/*
+!assets/audio/叮.mp3
+
+# ── 字体资源:仅保留 得意黑SmileySans-Oblique-2.ttf,忽略其余文件 ──
+assets/fonts/*
+!assets/fonts/得意黑SmileySans-Oblique-2.ttf
+
 # ── 参考 ──
 参考/
