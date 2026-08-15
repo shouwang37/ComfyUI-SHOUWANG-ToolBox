@@ -179,6 +179,22 @@ app.registerExtension({
         nodeType.prototype.onConfigure = function (info) {
             onConfigure?.apply(this, arguments);
             if (info?.size) this.__configured = true;
+            // 修复内容清空：保存时按钮行（serialize:false → null 占位）排在 text 之前，
+            // 而加载 configure 时按钮行尚未插入（setTimeout 延后），原生按索引恢复会把
+            // 占位 null 赋给 text，导致工作流切换/重载后输入内容丢失。
+            // 按 name 手动恢复：值数组中第一个字符串即为 text 内容（兼容旧版无占位的单元素格式）
+            const vals = info?.widgets_values;
+            if (Array.isArray(vals)) {
+                const textWidget = this.widgets?.find((w) => w.name === "text");
+                if (textWidget) {
+                    const textVal = vals.find((v) => typeof v === "string");
+                    if (textVal !== undefined) {
+                        textWidget.value = textVal;
+                        if (textWidget.element) textWidget.element.value = textVal;
+                    }
+                }
+            }
+            syncTextAreaHeight(this);
         };
 
         // ── 节点创建：添加「复制 / 粘贴」画布按钮行（位于输入框之前） ──
