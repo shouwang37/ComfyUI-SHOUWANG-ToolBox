@@ -169,7 +169,7 @@ def _create_lsnet_artist(variant, pretrained=False, **kwargs):
 
 
 @register_model
-def lsnet_t_artist(num_classes=1000, distillation=False, pretrained=False, 
+def shouwang_lsnet_t_artist(num_classes=1000, distillation=False, pretrained=False, 
                    feature_dim=None, use_projection=True, **kwargs):
     model = _create_lsnet_artist(
         "lsnet_t_artist",
@@ -189,7 +189,7 @@ def lsnet_t_artist(num_classes=1000, distillation=False, pretrained=False,
 
 
 @register_model
-def lsnet_s_artist(num_classes=1000, distillation=False, pretrained=False,
+def shouwang_lsnet_s_artist(num_classes=1000, distillation=False, pretrained=False,
                    feature_dim=None, use_projection=True, **kwargs):
     model = _create_lsnet_artist(
         "lsnet_s_artist",
@@ -209,7 +209,7 @@ def lsnet_s_artist(num_classes=1000, distillation=False, pretrained=False,
 
 
 @register_model
-def lsnet_b_artist(num_classes=1000, distillation=False, pretrained=False,
+def shouwang_lsnet_b_artist(num_classes=1000, distillation=False, pretrained=False,
                    feature_dim=None, use_projection=True, **kwargs):
     model = _create_lsnet_artist(
         "lsnet_b_artist",
@@ -229,7 +229,7 @@ def lsnet_b_artist(num_classes=1000, distillation=False, pretrained=False,
 
 
 @register_model
-def lsnet_l_artist(num_classes=1000, distillation=False, pretrained=False,
+def shouwang_lsnet_l_artist(num_classes=1000, distillation=False, pretrained=False,
                    feature_dim=None, use_projection=True, **kwargs):
     model = _create_lsnet_artist(
         "lsnet_l_artist",
@@ -249,7 +249,7 @@ def lsnet_l_artist(num_classes=1000, distillation=False, pretrained=False,
 
 
 @register_model
-def lsnet_xl_artist(num_classes=1000, distillation=False, pretrained=False,
+def shouwang_lsnet_xl_artist(num_classes=1000, distillation=False, pretrained=False,
                     feature_dim=None, use_projection=True, **kwargs):
     model = _create_lsnet_artist(
         "lsnet_xl_artist",
@@ -269,7 +269,7 @@ def lsnet_xl_artist(num_classes=1000, distillation=False, pretrained=False,
 
 
 @register_model
-def lsnet_xl_artist_448(num_classes=50000, distillation=False, pretrained=False,
+def shouwang_lsnet_xl_artist_448(num_classes=50000, distillation=False, pretrained=False,
                         feature_dim=None, use_projection=True, **kwargs):
     model = _create_lsnet_artist(
         "lsnet_xl_artist_448",

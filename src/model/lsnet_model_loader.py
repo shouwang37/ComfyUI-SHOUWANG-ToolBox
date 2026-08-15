@@ -17,6 +17,7 @@ from timm.data.transforms_factory import create_transform
 from timm.models import create_model
 
 # 统一通过 lsnet_model 包导入(模型定义在 src/model/lsnet_model/__init__.py 中汇总注册)
+# 注意:注册名统一带 shouwang_ 前缀,避免与 comfyui-lsnet 等其他插件注册的 lsnet_* 同名冲突
 from src.model.lsnet_model import lsnet_artist  # noqa: F401  导入即注册模型到 timm
 from src.model.lsnet_model.lsnet_artist import default_cfgs_artist  # noqa: E402
 
@@ -169,7 +170,7 @@ class LSNetModelLoader:
                 print(f"Warning: Failed to load config.json: {e}")
 
         model = create_model(
-            model_type,
+            f"shouwang_{model_type}",
             pretrained=False,
             num_classes=num_classes,
             feature_dim=feature_dim,

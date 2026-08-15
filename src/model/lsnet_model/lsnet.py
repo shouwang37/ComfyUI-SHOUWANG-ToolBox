@@ -348,7 +348,7 @@ def _create_lsnet(variant, pretrained=False, **kwargs):
     return model
 
 @register_model
-def lsnet_t(num_classes=1000, distillation=False, pretrained=False, **kwargs):
+def shouwang_lsnet_t(num_classes=1000, distillation=False, pretrained=False, **kwargs):
     model = _create_lsnet("lsnet_t" + ("_distill" if distillation else ""),
                   pretrained=pretrained,
                   num_classes=num_classes, 
@@ -362,7 +362,7 @@ def lsnet_t(num_classes=1000, distillation=False, pretrained=False, **kwargs):
     return model
 
 @register_model
-def lsnet_s(num_classes=1000, distillation=False, pretrained=False, **kwargs):
+def shouwang_lsnet_s(num_classes=1000, distillation=False, pretrained=False, **kwargs):
     model = _create_lsnet("lsnet_s" + ("_distill" if distillation else ""),
                   pretrained=pretrained,
                   num_classes=num_classes, 
@@ -376,7 +376,7 @@ def lsnet_s(num_classes=1000, distillation=False, pretrained=False, **kwargs):
     return model
 
 @register_model
-def lsnet_b(num_classes=1000, distillation=False, pretrained=False, **kwargs):
+def shouwang_lsnet_b(num_classes=1000, distillation=False, pretrained=False, **kwargs):
     model = _create_lsnet("lsnet_b" + ("_distill" if distillation else ""),
                   pretrained=pretrained,
                   num_classes=num_classes, 
@@ -390,16 +390,16 @@ def lsnet_b(num_classes=1000, distillation=False, pretrained=False, **kwargs):
     return model
 
 @register_model
-def lsnet_t_distill(**kwargs):
+def shouwang_lsnet_t_distill(**kwargs):
     kwargs["distillation"] = True
-    return lsnet_t(**kwargs)
+    return shouwang_lsnet_t(**kwargs)
 
 @register_model
-def lsnet_s_distill(**kwargs):
+def shouwang_lsnet_s_distill(**kwargs):
     kwargs["distillation"] = True
-    return lsnet_s(**kwargs)
+    return shouwang_lsnet_s(**kwargs)
 
 @register_model
-def lsnet_b_distill(**kwargs):
+def shouwang_lsnet_b_distill(**kwargs):
     kwargs["distillation"] = True
-    return lsnet_b(**kwargs)
+    return shouwang_lsnet_b(**kwargs)
