@@ -31,8 +31,6 @@ try:
                 return web.Response(status=404, text="wallpaper not found")
             return web.FileResponse(path)
 
-        print("[ShouwangToolBox] 壁纸代理路由已注册: /shouwang/wallpaper")
-
     _setup_wallpaper_route()
 except Exception as e:
     print(f"[ShouwangToolBox] 壁纸代理路由注册失败: {e}")
